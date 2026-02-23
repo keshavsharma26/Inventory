@@ -40,10 +40,14 @@ const api = {
 
     auth: {
         login: (username, password) => {
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-            return fetch(`${API_URL}/auth/login`, { method: 'POST', body: formData }).then(res => res.json());
+            const params = new URLSearchParams();
+            params.append('username', username);
+            params.append('password', password);
+            return fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            }).then(res => res.json());
         },
         me: () => api.request('/auth/me')
     },
