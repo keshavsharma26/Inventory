@@ -16,9 +16,19 @@ class UserRole(str, enum.Enum):
     MANAGER = "MANAGER"
     STAFF = "STAFF"
 
+class Organization(Base):
+    """THE ROOT OF MULTI-TENANCY: Every business is an organization."""
+    __tablename__ = "organizations"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=now_ist)
+    
+    users = relationship("User", back_populates="organization")
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True) # Null for super-admins if any
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
@@ -26,10 +36,13 @@ class User(Base):
     is_active = Column(Integer, default=1)
     created_at = Column(DateTime, default=now_ist)
 
+    organization = relationship("Organization", back_populates="users")
+
 class Client(Base):
     """PHASE A: Client/Company tracking for asset lifecycle"""
     __tablename__ = "clients"
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     company_name = Column(String(150), nullable=False, index=True)
     location = Column(String(150), index=True)
     contact_person = Column(String(100))
@@ -39,20 +52,23 @@ class Client(Base):
     is_active = Column(Integer, default=1, index=True)
     created_at = Column(DateTime, default=now_ist)
     
-    __table_args__ = (UniqueConstraint('company_name', 'location', name='uq_client_company_location'),)
+    __table_args__ = (UniqueConstraint('organization_id', 'company_name', 'location', name='uq_org_client_loc'),)
     
     transactions = relationship("InventoryTransaction", back_populates="client")
 
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     product_name = Column(String(100), nullable=False)
-    sku_code = Column(String(50), unique=True, index=True, nullable=False)
+    sku_code = Column(String(50), index=True, nullable=False)
     category = Column(String(50))
     purchase_price = Column(Float, default=0.0)
     selling_price = Column(Float, default=0.0)
     low_stock_limit = Column(Integer, default=5)
     is_active = Column(Integer, default=1, index=True)
+
+    __table_args__ = (UniqueConstraint('organization_id', 'sku_code', name='uq_org_sku'),)
     
     # NEW: Advanced Tracking Flags
     is_serialized = Column(Boolean, default=False)
@@ -142,6 +158,7 @@ class InventoryTransaction(Base):
     serial_numbers = Column(JSONB) # To store list of serial numbers involved in this transaction
     
     # PHASE A: Asset lifecycle tracking
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"), index=True)
     lifecycle_status = Column(String(50), default=LifecycleStatus.PURCHASED, index=True)
     
@@ -174,8 +191,11 @@ class PurchaseOrderStatus(str, enum.Enum):
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"
     id = Column(Integer, primary_key=True, index=True)
-    po_number = Column(String(50), unique=True, index=True, nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    po_number = Column(String(50), index=True, nullable=False)
     supplier_name = Column(String(150), nullable=False)
+    
+    __table_args__ = (UniqueConstraint('organization_id', 'po_number', name='uq_org_po'),)
     status = Column(String(30), default=PurchaseOrderStatus.DRAFT, index=True)
     total_amount = Column(Float, default=0.0)
     expected_delivery_date = Column(Date)

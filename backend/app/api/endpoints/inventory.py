@@ -26,15 +26,15 @@ router = APIRouter()
 
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard(db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    return crud_inventory.get_dashboard_stats(db)
+    return crud_inventory.get_dashboard_stats(db, org_id=current_user.organization_id)
 
 @router.get("/dashboard/analytics", response_model=DashboardAnalyticsOut)
 def get_dashboard_analytics(days: int = Query(30), db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    return crud_inventory.get_dashboard_analytics(db, days=days)
+    return crud_inventory.get_dashboard_analytics(db, org_id=current_user.organization_id, days=days)
 
 @router.get("/products", response_model=List[ProductOut])
 def list_products(db: Session = Depends(get_db), skip: int = Query(0), limit: int = Query(100), current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    products = crud_inventory.get_products(db, skip=skip, limit=limit)
+    products = crud_inventory.get_products(db, org_id=current_user.organization_id, skip=skip, limit=limit)
     p_ids = [p.id for p in products]
     stock_map = {}
     if p_ids:
@@ -52,24 +52,26 @@ def list_products(db: Session = Depends(get_db), skip: int = Query(0), limit: in
 
 @router.post("/products", response_model=ProductOut)
 def add_product(*, db: Session = Depends(get_db), product_in: ProductCreate, current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    if crud_inventory.get_product_by_sku(db, product_in.sku_code): raise HTTPException(status_code=400, detail="SKU already exists")
-    return crud_inventory.create_product(db, product_in)
+    if crud_inventory.get_product_by_sku(db, product_in.sku_code, org_id=current_user.organization_id): 
+        raise HTTPException(status_code=400, detail="SKU already exists in your inventory")
+    return crud_inventory.create_product(db, product_in, org_id=current_user.organization_id)
 
 @router.put("/products/{product_id}", response_model=ProductOut)
 def update_product(*, db: Session = Depends(get_db), product_id: int, product_in: ProductUpdate, current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    product = crud_inventory.update_product(db, product_id, product_in)
+    product = crud_inventory.update_product(db, product_id, product_in, org_id=current_user.organization_id)
     if not product: raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @router.post("/transactions", response_model=TransactionOut)
 def add_transaction(*, db: Session = Depends(get_db), transaction_in: TransactionCreate, current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    try: return crud_inventory.create_transaction(db, transaction_in, current_user.id)
+    try: return crud_inventory.create_transaction(db, transaction_in, current_user.id, org_id=current_user.organization_id)
     except ValueError as e: raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/transactions", response_model=List[TransactionOut])
 def list_transactions(db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user), status: Optional[str] = Query(None), transaction_type: Optional[str] = Query(None), skip: int = Query(0), limit: int = Query(200), include_deleted: bool = Query(False)) -> Any:
     from sqlalchemy import desc
-    query = db.query(InventoryTransaction, Product.product_name, Product.sku_code).join(Product)
+    query = db.query(InventoryTransaction, Product.product_name, Product.sku_code).join(Product)\
+        .filter(InventoryTransaction.organization_id == current_user.organization_id)
     if not include_deleted: query = query.filter(InventoryTransaction.deleted_at.is_(None))
     if status: query = query.filter(InventoryTransaction.status == status)
     if transaction_type: query = query.filter(InventoryTransaction.transaction_type == transaction_type)
@@ -82,11 +84,11 @@ def list_transactions(db: Session = Depends(get_db), current_user: User = Depend
 
 @router.post("/clients", response_model=ClientOut)
 def create_client(*, db: Session = Depends(get_db), client_in: ClientCreate, current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.create_client(db, client_in)
+    return crud_inventory.create_client(db, client_in, org_id=current_user.organization_id)
 
 @router.get("/clients", response_model=List[ClientOut])
 def list_clients(db: Session = Depends(get_db), skip: int = Query(0), limit: int = Query(100), current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.get_clients(db, skip=skip, limit=limit)
+    return crud_inventory.get_clients(db, org_id=current_user.organization_id, skip=skip, limit=limit)
 
 @router.get("/assets/{sku}/location", response_model=AssetLocationOut)
 def get_asset_location(sku: str, db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
@@ -120,11 +122,12 @@ def get_activity_feed(db: Session = Depends(get_db), skip: int = Query(0), limit
 
 @router.post("/batches", response_model=BatchOut)
 def create_batch(batch_in: BatchCreate, db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.create_batch(db, batch_in)
+    try: return crud_inventory.create_batch(db, batch_in, org_id=current_user.organization_id)
+    except ValueError as e: raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/batches", response_model=List[BatchOut])
 def list_batches(product_id: Optional[int] = Query(None), db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.get_batches(db, product_id=product_id)
+    return crud_inventory.get_batches(db, org_id=current_user.organization_id, product_id=product_id)
 
 @router.get("/products/{product_id}/instances", response_model=List[ProductInstanceOut])
 def list_instances(product_id: int, db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
@@ -136,15 +139,15 @@ def list_instances(product_id: int, db: Session = Depends(get_db), current_user:
 
 @router.post("/purchase-orders", response_model=PurchaseOrderOut)
 def create_po(po_in: PurchaseOrderCreate, db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.create_purchase_order(db, po_in, current_user.id)
+    return crud_inventory.create_purchase_order(db, po_in, current_user.id, org_id=current_user.organization_id)
 
 @router.get("/purchase-orders", response_model=List[PurchaseOrderOut])
 def list_pos(db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
-    return crud_inventory.list_purchase_orders(db)
+    return crud_inventory.list_purchase_orders(db, org_id=current_user.organization_id)
 
 @router.post("/purchase-orders/{po_id}/receive", response_model=PurchaseOrderOut)
 def receive_po(po_id: int, db: Session = Depends(get_db), current_user: User = Depends(deps.get_current_active_user)):
-    try: return crud_inventory.receive_purchase_order(db, po_id, current_user.id)
+    try: return crud_inventory.receive_purchase_order(db, po_id, current_user.id, org_id=current_user.organization_id)
     except ValueError as e: raise HTTPException(status_code=400, detail=str(e))
 
 # ============================================================

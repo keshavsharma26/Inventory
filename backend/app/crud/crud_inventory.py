@@ -57,15 +57,15 @@ def get_product_stock(db: Session, product_id: int) -> int:
 
     return int(in_sum - out_sum + transfer_in - transfer_out + manual_sum)
 
-def create_product(db: Session, product: ProductCreate) -> Product:
-    db_product = Product(**product.model_dump())
+def create_product(db: Session, product: ProductCreate, org_id: int) -> Product:
+    db_product = Product(**product.model_dump(), organization_id=org_id)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
     return db_product
 
-def update_product(db: Session, product_id: int, product_in: ProductUpdate) -> Optional[Product]:
-    db_product = db.query(Product).filter(Product.id == product_id).first()
+def update_product(db: Session, product_id: int, product_in: ProductUpdate, org_id: int) -> Optional[Product]:
+    db_product = db.query(Product).filter(Product.id == product_id, Product.organization_id == org_id).first()
     if not db_product:
         return None
     
@@ -96,21 +96,21 @@ def update_product(db: Session, product_id: int, product_in: ProductUpdate) -> O
     db.refresh(db_product)
     return db_product
 
-def get_product(db: Session, product_id: int) -> Optional[Product]:
-    return db.query(Product).filter(Product.id == product_id).first()
+def get_product(db: Session, product_id: int, org_id: int) -> Optional[Product]:
+    return db.query(Product).filter(Product.id == product_id, Product.organization_id == org_id).first()
 
-def get_product_by_sku(db: Session, sku: str) -> Optional[Product]:
-    return db.query(Product).filter(Product.sku_code == sku).first()
+def get_product_by_sku(db: Session, sku: str, org_id: int) -> Optional[Product]:
+    return db.query(Product).filter(Product.sku_code == sku, Product.organization_id == org_id).first()
 
-def get_products(db: Session, skip: int = 0, limit: int = 100, include_inactive: bool = False) -> List[Product]:
-    query = db.query(Product)
+def get_products(db: Session, org_id: int, skip: int = 0, limit: int = 100, include_inactive: bool = False) -> List[Product]:
+    query = db.query(Product).filter(Product.organization_id == org_id)
     if not include_inactive:
         query = query.filter(Product.is_active == 1)
     return query.offset(skip).limit(limit).all()
 
-def create_transaction(db: Session, transaction: TransactionCreate, user_id: int) -> InventoryTransaction:
+def create_transaction(db: Session, transaction: TransactionCreate, user_id: int, org_id: int) -> InventoryTransaction:
     """Create transaction with serial/batch validation and audit logging"""
-    product = db.query(Product).filter(Product.id == transaction.product_id).first()
+    product = db.query(Product).filter(Product.id == transaction.product_id, Product.organization_id == org_id).first()
     if not product:
         raise ValueError("Product not found")
 
@@ -146,6 +146,7 @@ def create_transaction(db: Session, transaction: TransactionCreate, user_id: int
     # 4. Create transaction
     db_transaction = InventoryTransaction(
         **transaction.model_dump(),
+        organization_id=org_id,
         created_by=user_id
     )
     
@@ -212,9 +213,9 @@ def create_transaction(db: Session, transaction: TransactionCreate, user_id: int
     
     return db_transaction
 
-def get_dashboard_stats(db: Session) -> Dict[str, Any]:
-    """Enhanced dashboard with new fields"""
-    total_products = db.query(Product).filter(Product.is_active == 1).count()
+def get_dashboard_stats(db: Session, org_id: int) -> Dict[str, Any]:
+    """Enhanced dashboard with new fields scoped to org"""
+    total_products = db.query(Product).filter(Product.is_active == 1, Product.organization_id == org_id).count()
     
     stock_map_raw = db.query(
         InventoryTransaction.product_id,
@@ -226,7 +227,7 @@ def get_dashboard_stats(db: Session) -> Dict[str, Any]:
                 else_=0
             )
         ), 0)
-    ).filter(InventoryTransaction.deleted_at.is_(None)).group_by(InventoryTransaction.product_id).all()
+    ).filter(InventoryTransaction.deleted_at.is_(None), InventoryTransaction.organization_id == org_id).group_by(InventoryTransaction.product_id).all()
     
     stock_map = {row[0]: int(row[1] or 0) for row in stock_map_raw}
     
@@ -234,7 +235,7 @@ def get_dashboard_stats(db: Session) -> Dict[str, Any]:
     low_stock_count = 0
     inventory_value = 0.0
     
-    all_products = db.query(Product).filter(Product.is_active == 1).all()
+    all_products = db.query(Product).filter(Product.is_active == 1, Product.organization_id == org_id).all()
     for p in all_products:
         stock = stock_map.get(p.id, 0)
         total_inventory += stock
@@ -255,7 +256,8 @@ def get_dashboard_stats(db: Session) -> Dict[str, Any]:
             ), 0)
         ).filter(
             InventoryTransaction.lifecycle_status == status_filter,
-            InventoryTransaction.deleted_at.is_(None)
+            InventoryTransaction.deleted_at.is_(None),
+            InventoryTransaction.organization_id == org_id
         ).scalar() or 0
         return int(balance)
 
@@ -266,12 +268,13 @@ def get_dashboard_stats(db: Session) -> Dict[str, Any]:
     # A SALE marks them as INSTALLED (+quantity). A CUSTOMER_RETURN marks them as RETURNED.
     
     installed_count = db.query(func.sum(InventoryTransaction.quantity))\
-        .filter(InventoryTransaction.lifecycle_status == LifecycleStatus.INSTALLED, InventoryTransaction.deleted_at.is_(None)).scalar() or 0
+        .filter(InventoryTransaction.lifecycle_status == LifecycleStatus.INSTALLED, InventoryTransaction.deleted_at.is_(None), InventoryTransaction.organization_id == org_id).scalar() or 0
     returned_count = calculate_balance(LifecycleStatus.RETURNED)
     damaged_count = calculate_balance(LifecycleStatus.DAMAGED)
 
     recent_transactions_raw = db.query(InventoryTransaction, Product.product_name)\
         .join(Product, InventoryTransaction.product_id == Product.id)\
+        .filter(InventoryTransaction.organization_id == org_id)\
         .order_by(desc(InventoryTransaction.created_at))\
         .limit(10).all()
     
@@ -298,10 +301,10 @@ def get_dashboard_stats(db: Session) -> Dict[str, Any]:
         "recent_transactions": recent_transactions
     }
 
-def get_dashboard_analytics(db: Session, days: int = 30) -> Dict[str, Any]:
-    """Phase D: Advanced Analytics for Dashboard"""
+def get_dashboard_analytics(db: Session, org_id: int, days: int = 30) -> Dict[str, Any]:
+    """Phase D: Advanced Analytics for Dashboard Scoped to Org"""
     # 1. Get current base stats
-    stats = get_dashboard_stats(db)
+    stats = get_dashboard_stats(db, org_id)
     
     # 2. Inventory Value Trend (Last 30 days)
     # Since historical snapshots might be empty initially, we'll generate based on current value
@@ -460,15 +463,19 @@ def get_installation_report(db: Session, filters: ReportFilter) -> Dict[str, Any
 # ENTERPRISE V2: BATCH & SERIAL CRUD
 # ============================================================
 
-def create_batch(db: Session, batch_in: BatchCreate) -> Batch:
+def create_batch(db: Session, batch_in: BatchCreate, org_id: int) -> Batch:
+    # Verify product belongs to org
+    product = db.query(Product).filter(Product.id == batch_in.product_id, Product.organization_id == org_id).first()
+    if not product:
+        raise ValueError("Product not found in your organization")
     db_batch = Batch(**batch_in.model_dump())
     db.add(db_batch)
     db.commit()
     db.refresh(db_batch)
     return db_batch
 
-def get_batches(db: Session, product_id: Optional[int] = None) -> List[Batch]:
-    query = db.query(Batch)
+def get_batches(db: Session, org_id: int, product_id: Optional[int] = None) -> List[Batch]:
+    query = db.query(Batch).join(Product).filter(Product.organization_id == org_id)
     if product_id: query = query.filter(Batch.product_id == product_id)
     return query.order_by(desc(Batch.created_at)).all()
 
@@ -482,9 +489,15 @@ def get_product_instances(db: Session, product_id: int) -> List[ProductInstance]
 # ENTERPRISE V2: PURCHASE ORDERS
 # ============================================================
 
-def create_purchase_order(db: Session, po_in: PurchaseOrderCreate, user_id: int) -> PurchaseOrder:
+def create_purchase_order(db: Session, po_in: PurchaseOrderCreate, user_id: int, org_id: int) -> PurchaseOrder:
     total = sum(item.quantity * item.unit_price for item in po_in.items)
-    db_po = PurchaseOrder(po_number=po_in.po_number, supplier_name=po_in.supplier_name, total_amount=total, created_by=user_id)
+    db_po = PurchaseOrder(
+        po_number=po_in.po_number, 
+        supplier_name=po_in.supplier_name, 
+        total_amount=total, 
+        created_by=user_id,
+        organization_id=org_id
+    )
     db.add(db_po)
     db.flush()
     for item in po_in.items:
@@ -493,17 +506,17 @@ def create_purchase_order(db: Session, po_in: PurchaseOrderCreate, user_id: int)
     db.refresh(db_po)
     return db_po
 
-def list_purchase_orders(db: Session, skip: int = 0, limit: int = 100) -> List[PurchaseOrder]:
-    return db.query(PurchaseOrder).order_by(desc(PurchaseOrder.created_at)).offset(skip).limit(limit).all()
+def list_purchase_orders(db: Session, org_id: int, skip: int = 0, limit: int = 100) -> List[PurchaseOrder]:
+    return db.query(PurchaseOrder).filter(PurchaseOrder.organization_id == org_id).order_by(desc(PurchaseOrder.created_at)).offset(skip).limit(limit).all()
 
 def get_purchase_order_by_id(db: Session, po_id: int) -> Optional[PurchaseOrder]:
     return db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
 
-def receive_purchase_order(db: Session, po_id: int, user_id: int) -> PurchaseOrder:
-    db_po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+def receive_purchase_order(db: Session, po_id: int, user_id: int, org_id: int) -> PurchaseOrder:
+    db_po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id, PurchaseOrder.organization_id == org_id).first()
     if not db_po or db_po.status == PurchaseOrderStatus.RECEIVED: return db_po
     for item in db_po.items:
-        create_transaction(db, TransactionCreate(product_id=item.product_id, transaction_type=TransactionType.PURCHASE, quantity=item.quantity, reference_number=db_po.po_number), user_id)
+        create_transaction(db, TransactionCreate(product_id=item.product_id, transaction_type=TransactionType.PURCHASE, quantity=item.quantity, reference_number=db_po.po_number), user_id, org_id=org_id)
         item.received_quantity = item.quantity
     db_po.status = PurchaseOrderStatus.RECEIVED
     db.commit()

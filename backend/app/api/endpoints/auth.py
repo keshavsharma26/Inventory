@@ -36,7 +36,6 @@ def read_user_me(
 ) -> Any:
     return current_user
 
-# Simplified user creation for first-time use
 @router.post("/signup", response_model=UserOut)
 def create_user(
     *,
@@ -47,11 +46,18 @@ def create_user(
     if user:
         raise HTTPException(status_code=400, detail="User already exists")
     
+    # 1. Create the user's private organization
+    org = Organization(name=f"{user_in.username}'s Inventory")
+    db.add(org)
+    db.flush() # Get the org ID
+
+    # 2. Create the user hooked to that organization
     db_user = User(
         username=user_in.username,
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
-        role=user_in.role
+        role=user_in.role or "ADMIN",
+        organization_id=org.id
     )
     db.add(db_user)
     db.commit()
