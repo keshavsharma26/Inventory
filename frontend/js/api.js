@@ -1,4 +1,4 @@
-const API_URL = 'https://verification-separated-tires-kits.trycloudflare.com/api';
+const API_URL = 'https://inventory-1-vp9k.onrender.com/api';
 const BASE_URL = API_URL.replace('/api', '');
 
 const api = {
