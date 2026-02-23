@@ -7,7 +7,7 @@ from app.api import deps
 from app.core import security
 from app.core.config import settings
 from app.db.session import get_db
-from app.models.base import User
+from app.models.base import User, Organization
 from app.schemas.schemas import Token, UserOut, UserCreate
 
 router = APIRouter()

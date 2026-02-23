@@ -4,7 +4,8 @@ from app.models.base import (
     Product, InventoryTransaction, TransactionType, User, ProductStatus,
     Client, AuditLog, TransactionSnapshot, InventoryValueHistory,
     ProductImage, BulkImport, Notification, StockForecast, LifecycleStatus,
-    Batch, ProductInstance, PurchaseOrder, POItem, PurchaseOrderStatus
+    Batch, ProductInstance, PurchaseOrder, POItem, PurchaseOrderStatus,
+    Organization
 )
 from app.schemas.schemas import (
     ProductCreate, ProductUpdate, TransactionCreate, ClientCreate, ClientUpdate,
