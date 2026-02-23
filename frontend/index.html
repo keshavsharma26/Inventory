@@ -27,11 +27,20 @@
             <a href="products.html" class="nav-link">
                 <i class="fas fa-box"></i> Products
             </a>
+            <a href="batches.html" class="nav-link">
+                <i class="fas fa-layer-group"></i> Batches
+            </a>
             <a href="inventory.html" class="nav-link">
                 <i class="fas fa-exchange-alt"></i> Transactions
             </a>
+            <a href="purchase-orders.html" class="nav-link">
+                <i class="fas fa-shopping-cart"></i> Purchase Orders
+            </a>
             <a href="reports.html" class="nav-link">
                 <i class="fas fa-file-excel"></i> Reports
+            </a>
+            <a href="audit.html" class="nav-link">
+                <i class="fas fa-history"></i> Audit Log
             </a>
             <div class="mt-auto pt-5">
                 <a href="#" id="logoutBtn" class="nav-link text-danger">
@@ -46,6 +55,15 @@
         <header class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 fw-bold mb-0">Dashboard</h1>
             <div class="user-profile d-flex align-items-center">
+                <!-- FIX 8: Notification Bell -->
+                <div id="notificationBellContainer" style="display: none;">
+                    <div id="notificationBell" class="position-relative me-3" style="cursor: pointer;">
+                        <i class="fas fa-bell text-primary" style="font-size: 1.5rem;"></i>
+                        <span id="notificationCount"
+                            class="badge bg-danger position-absolute top-0 start-100 translate-middle">0</span>
+                    </div>
+                </div>
+
                 <span id="userName" class="me-2 fw-medium">Admin User</span>
                 <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
                     style="width: 40px; height: 40px;">
@@ -94,16 +112,16 @@
             </div>
         </div>
 
-        <!-- Sensor Stats -->
+        <!-- Lifecycle Status Cards -->
         <div class="row g-4 mb-4">
             <div class="col-md-4">
                 <div class="card stat-card border-0 shadow-sm">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon bg-info-subtle text-info me-3">
-                            <i class="fas fa-satellite-dish"></i>
+                            <i class="fas fa-check-circle"></i>
                         </div>
                         <div>
-                            <div class="text-muted small">Installed Sensors</div>
+                            <div class="text-muted small">Installed Assets</div>
                             <div class="h4 fw-bold mb-0" id="installedSensors">0</div>
                         </div>
                     </div>
@@ -116,7 +134,7 @@
                             <i class="fas fa-undo"></i>
                         </div>
                         <div>
-                            <div class="text-muted small">Returned Sensors</div>
+                            <div class="text-muted small">Returned Assets</div>
                             <div class="h4 fw-bold mb-0" id="returnedSensors">0</div>
                         </div>
                     </div>
@@ -129,7 +147,7 @@
                             <i class="fas fa-heart-crack"></i>
                         </div>
                         <div>
-                            <div class="text-muted small">Damaged Sensors</div>
+                            <div class="text-muted small">Damaged Assets</div>
                             <div class="h4 fw-bold mb-0 text-danger" id="damagedSensors">0</div>
                         </div>
                     </div>
@@ -137,7 +155,40 @@
             </div>
         </div>
 
-        <div class="row">
+        <!-- FIX 6: Charts with Canvas Elements -->
+        <div class="row g-4 mb-4">
+            <!-- Inventory Trend Chart -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">Inventory Value Trend (30 days)</div>
+                    <div class="card-body">
+                        <canvas id="inventoryTrendChart" style="height: 300px; max-width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Movement Chart -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">Stock Movement (30 days)</div>
+                    <div class="card-body">
+                        <canvas id="stockMovementChart" style="height: 300px; max-width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lifecycle Status Chart -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">Asset Lifecycle Status</div>
+                    <div class="card-body" id="lifecyclePieChart">
+                        <!-- FIX 1: Will be populated with lifecycle data -->
+                    </div>
+                </div>
+            </div>
+
             <!-- Recent Transactions -->
             <div class="col-lg-8">
                 <div class="card">
@@ -163,23 +214,37 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Quick Actions -->
-            <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-lg-12">
                 <div class="card">
                     <div class="card-header">Quick Actions</div>
                     <div class="card-body">
-                        <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#transModal"
+                        <button class="btn btn-primary me-2 mb-2" data-bs-toggle="modal" data-bs-target="#transModal"
                             onclick="setTransType('PURCHASE')">
                             <i class="fas fa-plus me-2"></i> New Stock Entry
                         </button>
-                        <button class="btn btn-outline-primary w-100 mb-3" data-bs-toggle="modal"
+                        <button class="btn btn-warning me-2 mb-2" data-bs-toggle="modal" data-bs-target="#transModal"
+                            onclick="setTransType('STOCK_TRANSFER')">
+                            <i class="fas fa-truck me-2"></i> Transfer Stock
+                        </button>
+                        <button class="btn btn-outline-primary me-2 mb-2" data-bs-toggle="modal"
                             data-bs-target="#transModal" onclick="setTransType('SALE')">
                             <i class="fas fa-minus me-2"></i> Record Sale
                         </button>
-                        <hr>
-                        <a href="reports.html" class="btn btn-light w-100">
+                        <a href="purchase-orders.html" class="btn btn-dark me-2 mb-2">
+                            <i class="fas fa-shopping-cart me-2"></i> New Purchase Order
+                        </a>
+                        <a href="reports.html" class="btn btn-light me-2 mb-2">
                             <i class="fas fa-download me-2"></i> Download Reports
+                        </a>
+                        <button class="btn btn-light mb-2" onclick="showForecastModal()">
+                            <i class="fas fa-chart-line me-2"></i> Stock Forecast
+                        </button>
+                        <a href="audit.html" class="btn btn-light mb-2">
+                            <i class="fas fa-history me-2"></i> Audit Log
                         </a>
                     </div>
                 </div>
@@ -210,6 +275,34 @@
                                 <input type="number" id="tQty" class="form-control" required min="1">
                             </div>
                             <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Batch (Optional)</label>
+                                <select id="tBatchId" class="form-select">
+                                    <option value="">-- No Batch --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="serialField" class="mb-3 d-none">
+                            <label class="form-label small fw-bold">Serial Numbers (One per line)</label>
+                            <textarea id="tSerials" class="form-control" rows="3"
+                                placeholder="Enter SNs here..."></textarea>
+                        </div>
+
+                        <div id="transferFields" class="d-none">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold">Source Location</label>
+                                    <input type="text" id="tSource" class="form-control" placeholder="e.g. Warehouse">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold">Destination Location</label>
+                                    <input type="text" id="tDest" class="form-control" placeholder="e.g. Customer Site">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
                                 <label class="form-label small fw-bold">Status</label>
                                 <select id="tStatus" class="form-select">
                                     <option value="AVAILABLE">Available</option>
@@ -217,16 +310,6 @@
                                     <option value="RETURNED">Returned</option>
                                     <option value="DAMAGED">Damaged</option>
                                 </select>
-                            </div>
-                        </div>
-                        <div id="sensorFields" class="d-none">
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Client Company Name</label>
-                                <input type="text" id="tCompany" class="form-control" placeholder="e.g. ABC Corp">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Installation Location</label>
-                                <input type="text" id="tLocation" class="form-control" placeholder="e.g. Mumbai Office">
                             </div>
                         </div>
                         <div class="row">
@@ -253,6 +336,7 @@
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/reports.js"></script>
     <script>
         // Token check
         if (!localStorage.getItem('token')) {

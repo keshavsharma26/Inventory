@@ -1,0 +1,24 @@
+2026-02-23T13:00:44Z INF Thank you for trying Cloudflare Tunnel. Doing so, without a Cloudflare account, is a quick way to experiment and try it out. However, be aware that these account-less Tunnels have no uptime guarantee, are subject to the Cloudflare Online Services Terms of Use (https://www.cloudflare.com/website-terms/), and Cloudflare reserves the right to investigate your use of Tunnels for violations of such terms. If you intend to use Tunnels in production you should use a pre-created named tunnel by following: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+2026-02-23T13:00:44Z INF Requesting new quick Tunnel on trycloudflare.com...
+2026-02-23T13:00:48Z INF +--------------------------------------------------------------------------------------------+
+2026-02-23T13:00:48Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+2026-02-23T13:00:48Z INF |  https://apnic-priest-side-possible.trycloudflare.com                                      |
+2026-02-23T13:00:48Z INF +--------------------------------------------------------------------------------------------+
+2026-02-23T13:00:48Z INF Cannot determine default configuration path. No file [config.yml config.yaml] in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp]
+2026-02-23T13:00:48Z INF Version 2025.8.1 (Checksum b5d598b00cc3a28cabc5812d9f762819334614bae452db4e7f23eefe7b081556)
+2026-02-23T13:00:48Z INF GOOS: windows, GOVersion: go1.24.2, GoArch: amd64
+2026-02-23T13:00:48Z INF Settings: map[ha-connections:1 protocol:quic url:http://localhost:8000]
+2026-02-23T13:00:48Z INF cloudflared will not automatically update on Windows systems.
+2026-02-23T13:00:48Z INF Generated Connector ID: daedfa65-b30b-46a2-92f8-10b0bb13c0b0
+2026-02-23T13:00:48Z INF Initial protocol quic
+2026-02-23T13:00:48Z INF ICMP proxy will use 192.168.1.50 as source for IPv4
+2026-02-23T13:00:49Z INF ICMP proxy will use fe80::fbb4:63d4:9af9:40bc in zone Wi-Fi as source for IPv6
+2026-02-23T13:00:49Z ERR Cannot determine default origin certificate path. No file cert.pem in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp]. You need to specify the origin certificate path by specifying the origincert option in the configuration file, or set TUNNEL_ORIGIN_CERT environment variable originCertPath=
+2026-02-23T13:00:49Z INF cloudflared does not support loading the system root certificate pool on Windows. Please use --origin-ca-pool <PATH> to specify the path to the certificate pool
+2026-02-23T13:00:49Z INF ICMP proxy will use 192.168.1.50 as source for IPv4
+2026-02-23T13:00:49Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.192.67
+2026-02-23T13:00:49Z INF ICMP proxy will use fe80::fbb4:63d4:9af9:40bc in zone Wi-Fi as source for IPv6
+2026-02-23T13:00:49Z INF Starting metrics server on 127.0.0.1:20242/metrics
+2026-02-23T13:00:50Z INF Registered tunnel connection connIndex=0 connection=9431f69f-7dd5-47f1-b003-4caafba8a5e7 event=0 ip=198.41.192.67 location=del01 protocol=quic
+2026-02-23T13:05:54Z ERR Failed to refresh DNS local resolver error="lookup region1.v2.argotunnel.com: i/o timeout"
+2026-02-23T13:20:59Z ERR Failed to refresh DNS local resolver error="lookup region1.v2.argotunnel.com: i/o timeout"

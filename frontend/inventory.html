@@ -22,37 +22,57 @@
             <a href="products.html" class="nav-link"><i class="fas fa-box"></i> Products</a>
             <a href="inventory.html" class="nav-link active"><i class="fas fa-exchange-alt"></i> Transactions</a>
             <a href="reports.html" class="nav-link"><i class="fas fa-file-excel"></i> Reports</a>
+            <a href="audit.html" class="nav-link"><i class="fas fa-history"></i> Audit Log</a> <!-- Added -->
         </nav>
     </div>
 
     <main class="main-content">
         <header class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 fw-bold mb-0">Inventory Transactions</h1>
-            <div class="btns">
-                <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#transModal"
-                    onclick="setTransType('PURCHASE')">
-                    <i class="fas fa-arrow-down me-2"></i> Stock In
-                </button>
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#transModal"
-                    onclick="setTransType('SALE')">
-                    <i class="fas fa-arrow-up me-2"></i> Stock Out
-                </button>
+            <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#transModal"
+                onclick="setTransType('STOCK_TRANSFER')">
+                <i class="fas fa-truck me-2"></i> Transfer
+            </button>
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#transModal"
+                onclick="setTransType('PURCHASE')">
+                <i class="fas fa-arrow-down me-2"></i> Stock In
+            </button>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#transModal"
+                onclick="setTransType('SALE')">
+                <i class="fas fa-arrow-up me-2"></i> Stock Out
+            </button>
             </div>
         </header>
 
         <!-- Filters -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <input type="text" id="transSearch" class="form-control border-0 shadow-sm"
-                    placeholder="Search by company or product...">
-            </div>
             <div class="col-md-3">
+                <input type="text" id="transSearch" class="form-control border-0 shadow-sm"
+                    placeholder="Search by product, company or location...">
+            </div>
+            <div class="col-md-2">
                 <select id="statusFilter" class="form-select border-0 shadow-sm">
                     <option value="">All Status</option>
                     <option value="AVAILABLE">Available</option>
                     <option value="INSTALLED">Installed</option>
                     <option value="RETURNED">Returned</option>
                     <option value="DAMAGED">Damaged</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="clientFilter" class="form-select border-0 shadow-sm">
+                    <option value="">All Clients</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="typeFilter" class="form-select border-0 shadow-sm">
+                    <option value="">All Types</option>
+                    <option value="PURCHASE">Purchase</option>
+                    <option value="SALE">Sale</option>
+                    <option value="STOCK_TRANSFER">Stock Transfer</option>
+                    <option value="CUSTOMER_RETURN">Customer Return</option>
+                    <option value="SUPPLIER_RETURN">Supplier Return</option>
+                    <option value="MANUAL_ADJUSTMENT">Manual Adjustment</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -74,6 +94,8 @@
                                 <th>Issued To</th>
                                 <th>Location</th>
                                 <th>Ref #</th>
+                                <!-- NEW: Phase B - Actions Column -->
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="transactionsTable">
@@ -108,6 +130,34 @@
                                 <input type="number" id="tQty" class="form-control" required min="1">
                             </div>
                             <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Batch (Optional)</label>
+                                <select id="tBatchId" class="form-select">
+                                    <option value="">-- No Batch --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="serialField" class="mb-3 d-none">
+                            <label class="form-label small fw-bold">Serial Numbers (One per line)</label>
+                            <textarea id="tSerials" class="form-control" rows="3"
+                                placeholder="Enter SNs here..."></textarea>
+                        </div>
+
+                        <div id="transferFields" class="d-none">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold">Source Location</label>
+                                    <input type="text" id="tSource" class="form-control" placeholder="e.g. Warehouse">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold">Destination Location</label>
+                                    <input type="text" id="tDest" class="form-control" placeholder="e.g. Customer Site">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
                                 <label class="form-label small fw-bold">Status</label>
                                 <select id="tStatus" class="form-select">
                                     <option value="AVAILABLE">Available</option>
@@ -116,17 +166,14 @@
                                     <option value="DAMAGED">Damaged</option>
                                 </select>
                             </div>
-                        </div>
-                        <div id="sensorFields" class="d-none">
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Issued To Company</label>
-                                <input type="text" id="tCompany" class="form-control">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Location</label>
-                                <input type="text" id="tLocation" class="form-control">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Client</label>
+                                <select id="tClientId" class="form-select">
+                                    <option value="">-- No Client --</option>
+                                </select>
                             </div>
                         </div>
+
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Reference #</label>
                             <input type="text" id="tRef" class="form-control">
@@ -138,6 +185,57 @@
                         <div id="transError" class="alert alert-danger d-none py-2 small"></div>
                         <button type="submit" class="btn btn-primary w-100 py-2" id="submitTransBtn">Record
                             Transaction</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div class="modal fade" id="editTransModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold">Edit Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTransForm">
+                        <input type="hidden" id="editTId">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Product</label>
+                            <input type="text" id="editTProductName" class="form-control bg-light" readonly>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Quantity</label>
+                                <input type="number" id="editTQty" class="form-control" required min="1">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Status</label>
+                                <select id="editTStatus" class="form-select">
+                                    <option value="AVAILABLE">Available</option>
+                                    <option value="INSTALLED">Installed</option>
+                                    <option value="RETURNED">Returned</option>
+                                    <option value="DAMAGED">Damaged</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Issued To Company</label>
+                            <input type="text" id="editTCompany" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Location</label>
+                            <input type="text" id="editTLocation" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Reason for Edit (Audit)</label>
+                            <textarea id="editTReason" class="form-control" rows="2" required
+                                placeholder="Explain why this change is being made..."></textarea>
+                        </div>
+                        <div id="editTransError" class="alert alert-danger d-none py-2 small"></div>
+                        <button type="submit" class="btn btn-primary w-100 py-2">Update Transaction</button>
                     </form>
                 </div>
             </div>

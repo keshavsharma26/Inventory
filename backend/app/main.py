@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import logging
 import traceback
+from fastapi.staticfiles import StaticFiles
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url="/api/v1/openapi.json"
 )
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.middleware("http")
 async def catch_exceptions_middleware(request: Request, call_next):

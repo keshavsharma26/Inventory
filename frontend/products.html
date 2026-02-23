@@ -20,8 +20,11 @@
         <nav class="mt-4">
             <a href="index.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="products.html" class="nav-link active"><i class="fas fa-box"></i> Products</a>
+            <a href="batches.html" class="nav-link"><i class="fas fa-layer-group"></i> Batches</a>
             <a href="inventory.html" class="nav-link"><i class="fas fa-exchange-alt"></i> Transactions</a>
+            <a href="purchase-orders.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Purchase Orders</a>
             <a href="reports.html" class="nav-link"><i class="fas fa-file-excel"></i> Reports</a>
+            <a href="audit.html" class="nav-link"><i class="fas fa-history"></i> Audit Log</a>
         </nav>
     </div>
 
@@ -29,6 +32,11 @@
         <header class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 fw-bold mb-0">Product Management</h1>
             <div class="d-flex gap-2">
+                <!-- NEW: Phase E - Barcode Scanner -->
+                <div class="input-group" style="max-width: 250px;">
+                    <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                    <input type="text" id="barcodeScanner" class="form-control" placeholder="Scan barcode...">
+                </div>
                 <button class="btn btn-light border" onclick="exportProducts()">
                     <i class="fas fa-download me-2"></i> Export
                 </button>
@@ -67,6 +75,7 @@
                                 <th>Selling Price</th>
                                 <th>Curr. Stock</th>
                                 <th>Status</th>
+
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -113,9 +122,27 @@
                                 <input type="number" id="pSell" class="form-control" step="0.01" required>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Low Stock Limit</label>
-                            <input type="number" id="pLimit" class="form-control" value="5">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold">Low Stock Limit</label>
+                                <input type="number" id="pLimit" class="form-control" value="5">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="pIsSerialized">
+                                    <label class="form-check-label small fw-bold" for="pIsSerialized">Serialized
+                                        (SN/IMEI)</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="pIsBatchTracked">
+                                    <label class="form-check-label small fw-bold" for="pIsBatchTracked">Batch
+                                        Tracking</label>
+                                </div>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 py-2">Create Product</button>
                     </form>
@@ -163,7 +190,22 @@
                             <label class="form-label small fw-bold">Low Stock Limit</label>
                             <input type="number" id="editPLimit" class="form-control">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2">Update Product</button>
+
+                        <!-- Media Section (Added) -->
+                        <div class="border-top pt-3 mt-3">
+                            <label class="form-label small fw-bold mb-2"><i class="fas fa-images me-1"></i> Product
+                                Media</label>
+                            <div id="imageContainer" class="d-flex flex-wrap mb-2">
+                                <!-- Images will load here -->
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <input type="file" id="imageInput" class="form-control" accept="image/*">
+                                <button class="btn btn-outline-primary" type="button"
+                                    onclick="uploadImage()">Upload</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 mt-4">Update Product</button>
                     </form>
                 </div>
             </div>
