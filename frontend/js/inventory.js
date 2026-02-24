@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             product_id: parseInt(document.getElementById('tProduct').value),
             transaction_type: document.getElementById('tType').value,
             quantity: parseInt(document.getElementById('tQty').value),
+            unit_price: parseFloat(document.getElementById('tPrice')?.value) || null,
             status: document.getElementById('tStatus').value,
             reference_number: document.getElementById('tRef').value || '',
             notes: document.getElementById('tNotes').value || '',
@@ -248,7 +249,10 @@ function renderTransactions() {
                 <td class="fw-medium">${t.product_name || '-'}</td>
                 <td><span class="badge rounded-pill ${typeBadgeClass}"><i class="fas ${typeIcon} me-1"></i>${t.transaction_type}</span></td>
                 <td class="fw-bold">${t.quantity}</td>
-                <td><span class="badge rounded-pill ${statusClass}">${t.status || '-'}</span></td>
+                <td>
+                    <span class="badge rounded-pill ${statusClass}">${t.status || '-'}</span>
+                    ${t.unit_price ? `<div class="x-small fw-bold text-dark mt-1">₹${t.unit_price}</div>` : ''}
+                </td>
                 <td class="small">${t.issued_to_company || '-'}</td>
                 <td class="small">${t.issued_location || '-'}</td>
                 <td class="small text-secondary">${t.reference_number || '-'}</td>

@@ -288,6 +288,7 @@ def get_dashboard_stats(db: Session, org_id: int) -> Dict[str, Any]:
             "transaction_type": t.transaction_type,
             "quantity": t.quantity,
             "status": t.status,
+            "unit_price": t.unit_price,
             "created_at": t.created_at
         })
         

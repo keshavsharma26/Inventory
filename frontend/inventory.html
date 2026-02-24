@@ -125,11 +125,15 @@
                             </select>
                         </div>
                         <div class="row">
-                            <div class="col-6 mb-3">
+                            <div class="col-4 mb-3">
                                 <label class="form-label small fw-bold">Quantity</label>
                                 <input type="number" id="tQty" class="form-control" required min="1">
                             </div>
-                            <div class="col-6 mb-3">
+                            <div class="col-4 mb-3">
+                                <label class="form-label small fw-bold">Price (Opt)</label>
+                                <input type="number" id="tPrice" class="form-control" step="0.01" placeholder="0.00">
+                            </div>
+                            <div class="col-4 mb-3">
                                 <label class="form-label small fw-bold">Batch (Optional)</label>
                                 <select id="tBatchId" class="form-select">
                                     <option value="">-- No Batch --</option>

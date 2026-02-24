@@ -147,6 +147,7 @@ class InventoryTransaction(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
     transaction_type = Column(String(30), nullable=False, index=True)
     quantity = Column(Integer, nullable=False)
+    unit_price = Column(Float, nullable=True) # Optional price field
     
     issued_to_company = Column(String(100))
     issued_location = Column(String(100))

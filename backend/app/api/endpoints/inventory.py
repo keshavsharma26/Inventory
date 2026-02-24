@@ -76,7 +76,7 @@ def list_transactions(db: Session = Depends(get_db), current_user: User = Depend
     if status: query = query.filter(InventoryTransaction.status == status)
     if transaction_type: query = query.filter(InventoryTransaction.transaction_type == transaction_type)
     rows = query.order_by(desc(InventoryTransaction.created_at)).offset(skip).limit(limit).all()
-    return [TransactionOut(transaction_id=t.transaction_id, product_id=t.product_id, product_name=p_name, transaction_type=t.transaction_type, quantity=t.quantity, status=t.status, issued_to_company=t.issued_to_company, issued_location=t.issued_location, issued_to_person=t.issued_to_person, reference_number=t.reference_number, notes=t.notes, lifecycle_status=t.lifecycle_status, created_by=t.created_by, created_at=t.created_at, sku_code=sku) for t, p_name, sku in rows]
+    return [TransactionOut(transaction_id=t.transaction_id, product_id=t.product_id, product_name=p_name, transaction_type=t.transaction_type, quantity=t.quantity, status=t.status, issued_to_company=t.issued_to_company, issued_location=t.issued_location, issued_to_person=t.issued_to_person, reference_number=t.reference_number, notes=t.notes, lifecycle_status=t.lifecycle_status, created_by=t.created_by, created_at=t.created_at, sku_code=sku, unit_price=t.unit_price) for t, p_name, sku in rows]
 
 # ============================================================
 # CLIENTS & ASSETS

@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <td class="fw-bold">${t.quantity}</td>
                     <td>
                         <span class="badge rounded-pill ${statusColor}">${t.status || t.transaction_type}</span>
+                        ${t.unit_price ? `<div class="x-small fw-bold text-dark mt-1">₹${t.unit_price}</div>` : ''}
                         ${t.issued_to_company ? `<div class="x-small text-muted">${t.issued_to_company}</div>` : ''}
                     </td>
                 </tr>
@@ -79,9 +80,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             tableBody.innerHTML += row;
         });
 
-        if (stats.total_products > 0) {
-            loadProductsDropdown();
-        }
+        // Always load products dropdown to ensure it is ready for quick transactions
+        loadProductsDropdown();
 
     } catch (error) {
         console.error('Dashboard Load Error:', error);
@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             transaction_type: document.getElementById('tType').value,
             quantity: parseInt(document.getElementById('tQty').value),
             status: document.getElementById('tStatus').value,
+            unit_price: parseFloat(document.getElementById('tPrice')?.value) || null,
             reference_number: document.getElementById('tRef').value || '',
             notes: document.getElementById('tNotes').value || '',
             batch_id: parseInt(document.getElementById('tBatchId')?.value) || null,

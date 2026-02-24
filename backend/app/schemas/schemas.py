@@ -56,6 +56,7 @@ class TransactionCreate(BaseModel):
     reference_number: Optional[str] = None
     notes: Optional[str] = None
     batch_id: Optional[int] = None
+    unit_price: Optional[float] = None # NEW: Optional price tracking
     serial_numbers: Optional[List[str]] = None
     source_location: Optional[str] = None
     destination_location: Optional[str] = None
@@ -79,6 +80,7 @@ class TransactionOut(BaseModel):
     source_location: Optional[str] = None
     destination_location: Optional[str] = None
     created_by: Optional[int] = None
+    unit_price: Optional[float] = None
     created_at: datetime
 
     class Config:
