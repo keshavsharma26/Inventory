@@ -107,6 +107,14 @@ body {
 }
 
 /* Table */
+.table-responsive {
+    overflow: visible !important;
+}
+
+.card-body {
+    overflow: visible !important;
+}
+
 .table {
     margin-bottom: 0;
 }

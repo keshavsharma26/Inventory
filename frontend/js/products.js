@@ -123,7 +123,7 @@ function renderProducts(search = '', category = '') {
 
             <td>
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-action-menu" data-bs-toggle="dropdown">
+                    <button class="btn btn-sm btn-action-menu" data-bs-toggle="dropdown" data-bs-boundary="viewport">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
