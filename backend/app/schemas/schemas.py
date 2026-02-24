@@ -478,13 +478,16 @@ class TokenPayload(BaseModel):
 
 class UserCreate(BaseModel):
     username: str
+    email: str
     password: str
+    role: Optional[str] = "ADMIN"
     full_name: Optional[str] = None
 
 
 class UserOut(BaseModel):
     id: int
     username: str
+    email: str
     full_name: Optional[str] = None
     is_active: int
     created_at: datetime
